@@ -5,6 +5,7 @@ import App from "./App.tsx";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-material.min.css";
 import 'remixicon/fonts/remixicon.css'
+import 'react-toastify/dist/ReactToastify.css';
 import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("domo")!).render(

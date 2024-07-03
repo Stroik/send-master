@@ -6,7 +6,7 @@ const Envios: React.FC = () => (
   <>
     <PageHeader
       title="Envio de mensajes"
-      subtitle="Este es otro texto lorem ipsum para rellenar espacio y luego reemplazarlo por otro texto más descriptivo que no pensaré ahora"
+      subtitle="Listado de envíos realizados. Se pueden filtrar desde la tabla y exportarlos a CSV"
     >
       <Link className="btn btn-primary" to="nuevo">
         Nuevo envío

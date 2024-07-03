@@ -27,12 +27,14 @@ export const delWhatsapp = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
     const deleted = await deleteWhatsapp(id);
-    res.status(200).json({
+    return res.status(200).json({
       status: "ok",
       message: "WhatsApp deleted successfully",
       deleted,
     });
   } catch (error) {
-    res.status(500).json({ message: "Error deleting WhatsApp account", error });
+    return res
+      .status(500)
+      .json({ message: "Error deleting WhatsApp account", error });
   }
 };

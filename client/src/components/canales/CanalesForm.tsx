@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { socket } from "../lib/socket";
+import { socket } from "../../lib/socket";
 import { useNavigate } from "react-router-dom";
 
-const QRCodeReceiver: React.FC = () => {
+const CanalesForm: React.FC = () => {
   const navigate = useNavigate();
   const [qrCode, setQrCode] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
@@ -13,37 +13,36 @@ const QRCodeReceiver: React.FC = () => {
   };
 
   useEffect(() => {
+    socket.connect();
     socket.on("qrProcessing", () => {
-      socket.emit("new-whatsapp");
       setIsProcessing(true);
+      socket.emit("new-whatsapp");
     });
 
     socket.on("qrCode", (data) => {
-      console.log("QR DATA", data);
+      setIsProcessing(false);
       setQrCode(data);
     });
 
     socket.on("whatsapp-created", (id) => {
+      setIsProcessing(true);
       socket.emit("initQR", id);
-      setIsProcessing(false);
     });
 
-    socket.on("whatsapp-authenticated", () => {
-      console.log("Whatsapp authenticated");
-    });
     socket.on("whatsapp-ready", () => {
-      console.log("Whatsapp ready");
       navigate("/canales");
     });
 
     return () => {
       socket.off("qrCode");
       socket.off("qrProcessing");
+      socket.off("whatsapp-created");
+      socket.off("whatsapp-ready");
     };
   }, []);
 
   return (
-    <div className="card lg:card-side bg-base-200 max-w-4xl">
+    <div className="card lg:card-side bg-base-200">
       {isProcessing ? (
         <figure>
           <div className="skeleton w-96 h-96 aspect-square"></div>
@@ -89,4 +88,4 @@ const QRCodeReceiver: React.FC = () => {
   );
 };
 
-export default QRCodeReceiver;
+export default CanalesForm;

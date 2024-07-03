@@ -8,18 +8,29 @@ type IData = {
   phone: string;
   message: string;
   media?: string;
+  format?: string;
+  campaign?: string;
 };
 
 const prisma = new PrismaClient();
 
-const saveMessage = async (data: IData, senderId: string, status: string) => {
+const saveMessage = async (
+  data: IData,
+  senderId: string,
+  status: string,
+  campaign: string,
+  whatsappNumber: string
+) => {
   const saved = await prisma.message.create({
     data: {
       content: data.message,
       media: data.media ?? "",
-      phone: data.phone,
+      from: whatsappNumber,
+      to: data.phone,
       status,
       senderId,
+      campaign,
+      type: "BOT"
     },
   });
 
@@ -38,6 +49,10 @@ export const handleMessages = (socket: Socket) => {
     }
 
     const currentWhatsapp = whatsapps[currentIndex];
+    const whatsappNumber =
+      currentWhatsapp.info !== undefined
+        ? String(currentWhatsapp.info.wid._serialized).replace("@c.us", "")
+        : "";
     const hasMedia = data.media?.length;
     let media;
     if (hasMedia) {
@@ -52,8 +67,15 @@ export const handleMessages = (socket: Socket) => {
       } else {
         await currentWhatsapp.sendMessage(data.phone + "@c.us", data.message);
       }
-      await saveMessage(data, currentWhatsapp.id, "SENT");
 
+      await saveMessage(
+        data,
+        currentWhatsapp.id,
+        "SENT",
+        data.campaign ?? "",
+        whatsappNumber
+      );
+      socket.emit("message-success");
       logger.info(
         `Message sent to ${data.phone} using WhatsApp index ${currentIndex}`
       );
@@ -61,11 +83,16 @@ export const handleMessages = (socket: Socket) => {
       logger.error(
         `Failed to send message to ${data.phone} using WhatsApp index ${currentIndex}: ${error}`
       );
-      await saveMessage(data, currentWhatsapp.id, "FAILED");
-
-      console.log(error);
+      await saveMessage(
+        data,
+        currentWhatsapp.id,
+        "FAILED",
+        data.campaign ?? "",
+        whatsappNumber
+      );
+      socket.emit("message-failed");
     }
-
+    socket.emit("message-sent");
     currentIndex = (currentIndex + 1) % whatsapps.length;
   });
 };

@@ -13,7 +13,7 @@ export default class WhatsappManager {
   public async addWhatsapp(id: string, socket: Socket) {
     const whatsapp = new Whatsapp(id, socket);
     this.whatsapps.push(whatsapp);
-    whatsapp.initialize();
+    whatsapp.init();
     return whatsapp;
   }
 

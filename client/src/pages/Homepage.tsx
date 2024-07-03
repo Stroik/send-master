@@ -10,28 +10,43 @@ const Homepage: React.FC = () => (
             Envíos masivos de mensajes de whatsapp. Utilice multiples sesiones
             para el mismo mensaje
           </p>
-          <Link className="btn btn-primary" to="/wizard">Comenzar</Link>
+          {/* <Link className="btn btn-primary" to="/wizard">
+            Comenzar
+          </Link> */}
         </div>
       </div>
     </div>
     <div className="flex justify-center items-center w-full h-full gap-6">
-      <div className="card bg-primary text-primary-content w-96">
+      <div className="card bg-base-300 text-base-content w-full">
         <div className="card-body">
           <h2 className="card-title">Canales</h2>
-          <p className="pb-4">Administra tus canales de Whatsapp</p>
+          <p className="pb-4">Administra tus canales de Whatsapp.</p>
           <div className="card-actions justify-end">
-            <Link className="btn" to="/canales">
+            <Link className="btn btn-primary" to="/canales">
               Acceder
             </Link>
           </div>
         </div>
       </div>
-      <div className="card bg-primary text-primary-content w-96">
+      <div className="card bg-base-300 text-base-content w-full">
         <div className="card-body">
           <h2 className="card-title">Envíos</h2>
-          <p className="pb-4">Realiza envíos desde todos tus canales</p>
+          <p className="pb-4">Realiza envíos desde todos tus canales.</p>
           <div className="card-actions justify-end">
-            <Link className="btn" to="/envios">
+            <Link className="btn btn-primary" to="/envios">
+              Acceder
+            </Link>
+          </div>
+        </div>
+      </div>
+      <div className="card bg-base-300 text-base-content w-full">
+        <div className="card-body">
+          <h2 className="card-title">Filtrar Whatsapps</h2>
+          <p className="pb-4">
+            Filtrar números con whatsapp activos
+          </p>
+          <div className="card-actions justify-end">
+            <Link className="btn btn-primary" to="/envios">
               Acceder
             </Link>
           </div>

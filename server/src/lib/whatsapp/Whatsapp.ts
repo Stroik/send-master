@@ -2,6 +2,8 @@ import type { Socket } from "socket.io";
 import { Client, LocalAuth, Message, MessageMedia } from "whatsapp-web.js";
 import { join } from "path";
 import { PrismaClient } from "@prisma/client";
+import logger from "../../utils/logger";
+import { saveAnswers } from "../../services/messages.service";
 
 const dbPath = join(process.cwd(), "db", "sessions");
 const prisma = new PrismaClient();
@@ -63,36 +65,64 @@ export default class Whatsapp extends Client {
     });
 
     this.on("message", async (msg) => {
-      await this.onMessage(msg);
+      const data = {
+        id: this.id, //whatsapp id
+        body: msg.body, // content
+        from: msg.from, // cel del sender
+        media: msg.hasMedia, // el sender envio multimedia?
+        to:
+          this.info !== undefined
+            ? String(this.info.wid._serialized).replace("@c.us", "")
+            : "",
+        status: "SENT",
+        type: "HUMAN",
+      };
+      this.socket.emit("message-received", data);
+
+      const savedAnswer = await saveAnswers(data);
     });
   }
 
   private async authenticated() {
     this.socket.emit("whatsapp-authenticated");
-    await prisma.whatsapp.update({
+    await prisma.whatsapp.upsert({
       where: { id: this.id },
-      data: { status: "AUTHENTICATED" },
+      update: { status: "AUTHENTICATED" },
+      create: { status: "AUTHENTICATED" },
     });
   }
 
   private async ready() {
-    this.socket.emit("whatsapp-ready");
-    await prisma.whatsapp.update({
+    const ready = await prisma.whatsapp.upsert({
       where: { id: this.id },
-      data: {
+      update: {
         status: "READY",
         phone:
           this.info !== undefined
             ? String(this.info.wid._serialized).replace("@c.us", "")
-            : undefined,
+            : "",
+      },
+      create: {
+        phone:
+          this.info !== undefined
+            ? String(this.info.wid._serialized).replace("@c.us", "")
+            : "",
       },
     });
+    this.socket.emit("whatsapp-ready", ready.phone);
   }
 
   private async disconnected() {
-    await prisma.whatsapp.update({
+    await prisma.whatsapp.upsert({
       where: { id: this.id },
-      data: { status: "DISCONNECTED" },
+      update: { status: "DISCONNECTED" },
+      create: {
+        status: "DISCONNECTED",
+        phone:
+          this.info !== undefined
+            ? String(this.info.wid._serialized).replace("@c.us", "")
+            : "",
+      },
     });
   }
 
@@ -102,12 +132,17 @@ export default class Whatsapp extends Client {
     });
   }
 
+  public async init() {
+    this.initialize();
+    this.socket.emit("whatsapp-loging");
+  }
+
   public async validateNumber(phone: string) {
     try {
       const isValid = await this.isRegisteredUser(`${phone}@c.us`);
       return isValid;
     } catch (error) {
-      console.log("VALIDATE_NUMBER", error);
+      logger.error("VALIDATE_NUMBER", error);
       return false;
     }
   }
@@ -117,7 +152,7 @@ export default class Whatsapp extends Client {
       await this.destroy();
       return true;
     } catch (error) {
-      console.log("LOGOUT", error);
+      logger.error("LOGOUT", error);
       return false;
     }
   }
@@ -143,16 +178,7 @@ export default class Whatsapp extends Client {
         response = await this.sendMessage(`${phone}@c.us`, text);
       }
     } catch (error) {
-      console.log("SEND_MSG", error);
-    }
-  }
-
-  private async onMessage(message: Message) {
-    const { body } = message;
-    const chat = await message.getChat();
-
-    if (body.startsWith("ping")) {
-      await chat.sendMessage("pong 🏓");
+      logger.error("SEND_MSG", error);
     }
   }
 }

@@ -9,7 +9,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   subtitle,
   children,
 }) => (
-  <div className="page-header w-full flex justify-between items-center py-6 ">
+  <div className="page-header w-full flex justify-between items-center p-6 bg-base-200 mb-2">
     <div className="info">
       <h1 className="text-2xl pb-2">{title}</h1>
       <h2>{subtitle}</h2>

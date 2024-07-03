@@ -1,22 +1,33 @@
-import { AgGridReact } from "ag-grid-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { socket } from "../../lib/socket";
 import axios from "axios";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { AgGridReact } from "ag-grid-react";
 import { formatDate } from "../../utils/date";
 import "ag-grid-enterprise";
 
-const EnviosList: React.FC = () => {
-  const gridRef = useRef<any>(null);
-  const [rowData, setRowData] = useState([]);
+type ISocketMessageReceived = {
+  id: string;
+  body: string;
+  from: string;
+  hasMedia: boolean;
+};
 
+const RespuestasList: React.FC = () => {
+  const gridRef = useRef<any>(null);
+  const firstRender = useRef<boolean>(true);
+
+  const [answers, setAnswers] = useState<Array<ISocketMessageReceived>>([]);
   const [colDefs] = useState([
     {
-      field: "Whatsapp.phone",
+      field: "from",
       headerName: "Enviado desde",
       filter: "agTextColumnFilter",
+      cellRenderer: ({ data }: any) => (
+        <>{(data.from as string).replace("@c.us", "")}</>
+      ),
     },
-    { field: "to", headerName: "Enviado a", filter: "agTextColumnFilter" },
+    { field: "to", headerName: "Recibido a", filter: "agTextColumnFilter" },
     { field: "content", headerName: "Mensaje", filter: "agTextColumnFilter" },
-    { field: "media", headerName: "Multimedia", filter: "agTextColumnFilter" },
     { field: "campaign", headerName: "Campaña", filter: "agTextColumnFilter" },
     {
       field: "status",
@@ -37,31 +48,44 @@ const EnviosList: React.FC = () => {
     () => ({
       flex: 1,
       minWidth: 100,
-      filter: true,
-      resizable: true,
-      sortable: true,
+      filter: true, // Activar filtros por defecto
+      resizable: true, // Hacer las columnas redimensionables
+      sortable: true, // Hacer las columnas ordenables
     }),
     []
   );
 
-  const getMessages = async () => {
-    const response = await axios.get("http://localhost:3000/api/messages");
+  const getAnswers = useCallback(async () => {
+    const response = await axios.get(
+      "http://localhost:3000/api/messages/answers"
+    );
     if (response.status !== 200) return "error";
 
-    setRowData(response.data);
-  };
+    setAnswers(response.data);
+  }, []);
 
   const exportToCSV = () => {
-    const fileName = `Mensajes recibidos hasta ${formatDate(new Date())}`;
+    const fileName = `Mensajes enviados hasta ${formatDate(new Date())}`;
     gridRef.current?.api?.exportDataAsCsv({ fileName });
   };
 
   useEffect(() => {
-    getMessages();
-  }, []);
+    if (firstRender.current) {
+      getAnswers();
+      firstRender.current = false;
+    }
+
+    socket.on("message-received", () => {
+      getAnswers();
+    });
+
+    return () => {
+      socket.off("message-received");
+    };
+  }, [answers]);
 
   return (
-    <div className="envios-list flex flex-col">
+    <div className="respuestas-list  flex flex-col">
       <div className="dropdown ml-auto dropdown-end">
         <div tabIndex={0} role="button" className="btn mb-2">
           Exportar <i className="ri-download-cloud-line"></i>
@@ -78,7 +102,7 @@ const EnviosList: React.FC = () => {
       <div className="ag-theme-material-dark">
         <AgGridReact
           ref={gridRef}
-          rowData={rowData}
+          rowData={answers}
           columnDefs={colDefs as any}
           domLayout="autoHeight"
           animateRows
@@ -97,4 +121,4 @@ const EnviosList: React.FC = () => {
   );
 };
 
-export default EnviosList;
+export default RespuestasList;

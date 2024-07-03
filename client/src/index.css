@@ -4,11 +4,11 @@
 
 body,
 html {
-  @apply w-full h-full;
+  @apply w-full h-full flex justify-center;
 }
 
 #domo {
-  @apply grid h-full w-full;
+  @apply grid h-full w-full max-w-screen-xl;
   grid-template-areas: "header" "main" "footer";
   grid-template-rows: auto 1fr auto;
 }

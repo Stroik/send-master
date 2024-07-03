@@ -1,13 +1,13 @@
 import PageHeader from "../components/common/Pageheader";
-import QRCodeReceiver from "../components/QRCodeReceiver";
+import CanalesForm from "../components/canales/CanalesForm";
 
 const NuevoCanal: React.FC = () => (
   <>
     <PageHeader
       title="Agrega un nuevo canal"
-      subtitle="Este es otro texto lorem ipsum para rellenar espacio y luego reemplazarlo por otro texto más descriptivo que no pensaré ahora"
+      subtitle="Solicita un QR, esto creará un nuevo Whatsapp y podrás registrarlo escaneando el código QR"
     ></PageHeader>
-    <QRCodeReceiver />
+    <CanalesForm />
   </>
 );
 

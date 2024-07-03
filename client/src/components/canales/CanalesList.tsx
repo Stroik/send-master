@@ -1,12 +1,42 @@
-import { AgGridReact } from "ag-grid-react";
+import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
-import { useMemo, useState, useEffect } from "react";
+import { AgGridReact } from "ag-grid-react";
 import { socket } from "../../lib/socket";
+import { handleStatus } from "../../utils/status";
+import { toast } from "react-toastify";
+import { formatDate } from "../../utils/date";
 
 const CanalesList: React.FC = () => {
   const [isLoggin, setIsLoggin] = useState<boolean>(false);
+  const [RAM, setRAM] = useState<Array<number>>([]);
+
+  const cellRenderer = ({ data }: any) => (
+    <div className="flex h-full gap-2 items-center justify-center">
+      {isLoggin ? (
+        <span className="loading loading-spinner"></span>
+      ) : (
+        <button
+          className="btn btn-xs btn-square btn-outline btn-success tooltip tooltip-left"
+          data-tip="Iniciar"
+          onClick={() => handleLogin(data.id)}
+          disabled={data.status === "READY"}
+        >
+          <i className="ri-login-circle-line"></i>
+        </button>
+      )}
+      <button
+        className="btn btn-xs btn-square btn-outline btn-error tooltip tooltip-right"
+        data-tip="Eliminar"
+        onClick={() => handleDelete(data.id)}
+        disabled={isLoggin}
+      >
+        <i className="ri-delete-bin-fill"></i>
+      </button>
+    </div>
+  );
+
   const [rowData, setRowData] = useState([]);
-  const [colDefs, setColDefs] = useState([
+  const [colDefs] = useState([
     {
       field: "phone",
       headerName: "Número",
@@ -14,14 +44,18 @@ const CanalesList: React.FC = () => {
     {
       field: "status",
       headerName: "Estado",
+      cellRenderer: ({ data }: any) => <>{handleStatus(data.status)}</>,
     },
     {
       field: "updatedAt",
       headerName: "Última sesión",
+      cellRenderer: ({ data }) => <>{formatDate(data.updatedAt)}</>,
     },
     {
       field: "",
-      headerName: "% RAM",
+      headerComponent: () => {
+        return <span>% RAM</span>;
+      },
       cellRenderer: () => {
         const [minRam, maxRam] = consumedRAM(4);
 
@@ -37,32 +71,11 @@ const CanalesList: React.FC = () => {
       headerComponent: () => {
         return <div className="w-full text-center">Acciones</div>;
       },
-      cellRenderer: ({ data }: any) => (
-        <div className="flex h-full gap-2 items-center justify-center">
-          <button
-            className="btn btn-xs btn-square btn-outline btn-sucess tooltip tooltip-left"
-            data-tip="Iniciar"
-            disabled={data.status === "READY" || isLoggin}
-            onClick={() => handleLogin(data.id)}
-          >
-            <i className="ri-login-circle-line"></i>
-          </button>
-          <button
-            className="btn btn-xs btn-square btn-outline btn-error tooltip tooltip-right"
-            data-tip="Eliminar"
-            onClick={() => {
-              const sure = confirm("¿Estás seguro que querés borrar el canal?");
-              if (sure)
-                axios.delete(`http://localhost:3000/api/whatsapp/${data.id}`);
-            }}
-            disabled={isLoggin}
-          >
-            <i className="ri-delete-bin-fill"></i>
-          </button>
-        </div>
-      ),
+      cellRenderer,
     },
   ]);
+
+  const firstRender = useRef(true);
 
   const consumedRAM = (tabQuantity: number): [number, number] => {
     const minRamPerTabMB = 30;
@@ -76,7 +89,17 @@ const CanalesList: React.FC = () => {
 
   const handleLogin = (id: string) => {
     setIsLoggin(true);
+    toast("Se está iniciando sesión en Whatsapp Web");
     socket.emit("login-whatsapp", id);
+  };
+
+  const handleDelete = (id: string) => {
+    const sure = confirm("¿Estás seguro que querés borrar el canal?");
+    if (sure) {
+      axios
+        .delete(`http://localhost:3000/api/whatsapp/${id}`)
+        .finally(() => getCanales());
+    }
   };
 
   const defaultCol = useMemo(
@@ -86,38 +109,50 @@ const CanalesList: React.FC = () => {
     []
   );
 
-  const getCanales = async () => {
+  const getCanales = useCallback(async () => {
     const response = await axios.get("http://localhost:3000/api/whatsapp");
     setRowData(response.data);
-  };
+    const [minRam, maxRam] = consumedRAM(response.data.length * 4);
+    setRAM([minRam, maxRam]);
+  }, []);
 
   useEffect(() => {
-    getCanales();
+    if (firstRender.current) {
+      getCanales();
+      firstRender.current = false;
+    }
 
-    socket.on("whatsapp-loging", (id) => {
-      console.log("whatsapp loging", id);
+    socket.on("whatsapp-loging", () => {
       setIsLoggin(true);
     });
 
-    socket.on("whatsapp-ready", () => {
+    socket.on("whatsapp-ready", (phone: string) => {
       getCanales();
       setIsLoggin(false);
+      toast.success(`El número ${phone} ha iniciado sesión`);
     });
 
     return () => {
       socket.off("whatsapp-loging");
+      socket.off("whatsapp-ready");
     };
-  }, []);
+  }, [getCanales]);
 
   return (
-    <div className="ag-theme-material-dark">
-      <AgGridReact
-        rowData={rowData}
-        columnDefs={colDefs as any}
-        domLayout="autoHeight"
-        animateRows
-        defaultColDef={defaultCol}
-      />
+    <div className="flex flex-col gap-6">
+      <div className="ag-theme-material-dark">
+        <AgGridReact
+          key={isLoggin ? "loggin-true" : "loggin-false"}
+          rowData={rowData}
+          columnDefs={colDefs as any}
+          domLayout="autoHeight"
+          animateRows
+          defaultColDef={defaultCol}
+        />
+      </div>
+      <button className="btn btn-accent btn-sm self-end">
+        RAM Total Aprox {RAM[0]}MB/{RAM[1]}MB
+      </button>
     </div>
   );
 };

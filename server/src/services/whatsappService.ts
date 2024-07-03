@@ -16,11 +16,18 @@ export const sendMessage = async (message: IMessage) => {
 };
 
 export const retrieveWhatsapps = async () => {
-  const whatsapps = await prisma.whatsapp.findMany();
+  const whatsapps = await prisma.whatsapp.findMany({
+    where: {
+      active: true,
+    },
+  });
   return whatsapps;
 };
 
 export const deleteWhatsapp = async (id: string) => {
-  const deleted = await prisma.whatsapp.delete({ where: { id } });
+  const deleted = await prisma.whatsapp.update({
+    where: { id },
+    data: { active: false },
+  });
   return deleted;
 };

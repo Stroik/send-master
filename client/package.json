@@ -4,12 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
     "build": "tsc -b && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
   "dependencies": {
+    "ag-grid-enterprise": "^32.0.0",
     "ag-grid-react": "^31.3.2",
     "axios": "^1.7.2",
     "lodash-es": "^4.17.21",
@@ -17,6 +18,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.24.0",
+    "react-toastify": "^10.0.5",
     "remixicon": "^4.3.0",
     "socket.io-client": "^4.7.5",
     "xlsx": "^0.18.5"

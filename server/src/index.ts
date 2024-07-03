@@ -10,6 +10,7 @@ import app from "./app";
 import { whatsappManager } from "./lib/whatsapp/WhatsappManager";
 import logger from "./utils/logger";
 import { handleWhatsappLogin } from "./socket/handleWhatsappLogin";
+import { handleWhatsappValidation } from "./socket/handleWhatsappValidation";
 
 const server = createServer(app);
 const io = new Server(server, {
@@ -38,6 +39,7 @@ io.on("connection", (socket) => {
   handleQRCode(socket);
   handleWhatsappLogin(socket);
   handleMessages(socket);
+  handleWhatsappValidation(socket);
 
   socket.on("disconnect", () => {
     logger.warn(`User ${socket.id} is disconnected`);

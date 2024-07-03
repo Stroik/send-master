@@ -9,9 +9,10 @@ datasource db {
 
 model Whatsapp {
   id        String    @id @default(uuid())
-  phone     String?   @unique
+  phone     String?
   session   String?
   status    String?
+  active    Boolean?  @default(true)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   Message   Message[]
@@ -22,8 +23,11 @@ model Message {
   createdAt DateTime @default(now())
   content   String
   senderId  String
-  phone     String
+  from      String
+  to        String
   media     String
   status    String?
+  campaign  String?
+  type      String?
   Whatsapp  Whatsapp @relation(fields: [senderId], references: [id])
 }
